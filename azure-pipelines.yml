@@ -1,0 +1,67 @@
+# youtube clone artifact
+trigger: 
+- main
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool: myAgentPool
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: TF init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'anil-sub'
+        backendAzureRmResourceGroupName: 'storage-rg'
+        backendAzureRmStorageAccountName: 'avvaru27'
+        backendAzureRmContainerName: 'tf-state'
+        backendAzureRmKey: 'prod.terraform.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: TF Validate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+    - task: TerraformTaskV4@4
+      displayName: TF fmt
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        outputTo: 'console'
+        customCommand: 'fmt'
+        environmentServiceNameAzureRM: 'anil-sub'
+    - task: TerraformTaskV4@4
+      displayName: TF plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        commandOptions: '-out $(Build.SourcesDirectory)/tfplanfile'
+        environmentServiceNameAzureRM: 'anil-sub'
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory) '
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/'
+        Contents: |
+          **/*
+          !.git\**          
+          !*.hcl
+          !.terraform\**
+        TargetFolder: '$(Build.ArtifactStagingDirectory) '
+    
+    - task: ArchiveFiles@2
+      displayName: Archive files
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish artifacts
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: '$(Build.BuildId)-build'
+        publishLocation: 'Container'
+    
+    
