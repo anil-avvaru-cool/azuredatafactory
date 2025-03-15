@@ -3,3 +3,5 @@
 terraform.tfstate*
 *.tfvars
 secrets.txt
+tfplan
+*tfstate

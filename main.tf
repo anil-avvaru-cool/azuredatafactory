@@ -13,5 +13,5 @@ module "storage_module" {
   source = "./modules/az-storage"
   location = var.location
   res_group_name = azurerm_resource_group.data.name
-  
+  storage_acc_name = var.storage_acc_name  
 }
